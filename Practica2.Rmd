@@ -31,7 +31,18 @@ texto_enlaces <-  a %>% html_text2()
 
 df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
 a <- html %>% html_elements("a")
+
+
+url_enlaces <- enlaces %>% html_attr("href")
+rm(a)
+df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
+
+
 html <- httr2::request("https://www.mediawiki.org/wiki/MediaWiki")
+View(df)
+
+
+
 install.packages("httr2")
 getData
 parsedHtml <- htmlParse(content, asText = TRUE)
