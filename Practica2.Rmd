@@ -3,8 +3,8 @@ title: "Practica2"
 author: "Julio Takimoto"
 date: "`r Sys.Date()`"
 output: html_document
----grep
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -18,78 +18,71 @@ knitr::opts_chunk$set(echo = TRUE)
 
 El primer paso para realizar tareas de crawling y scraping es poder descargar los datos de la web. Para esto usaremos la capacidad de R y de sus librerías (httr y XML) para descargar webs y almacenarlas en variables que podamos convertir en un formato fácil de analizar (p.e. de HTML a XML)
 
-```         
-library(xml2)
-```
+```{r carga_libreria}        
 
-```         
-library(httr2)
-```
-
-install.packages("rvest")
-
-library(rvest)
-
-mediawiki_url \<- "<https://www.mediawiki.org/wiki/MediaWiki>"
-
-read_html(mediawiki_url)
-
-2.  Analizar el contenido de la web, buscando el título de la página (que en HTML se etiqueta como "title"). En las cabeceras web encontramos información como el título, los ficheros de estilo visual, y meta-información como el nombre del autor de la página, una descripción de esta, el tipo de codificación de esta, o palabras clave que indican qué tipo de información contiene la página. Una vez descargada la página, y convertida a un formato analizable (como XML), buscaremos los elementos de tipo "title". P.e. "
-
-html \<- read_html(mediawiki_url)
-
-titulo \<- html %\>% html_element("title")
-
-View(html)
-
-3\. Analizar el contenido de la web, buscando todos los enlaces (que en HTML se etiquetan como "a"), buscando el texto del enlace, así como la URL. Vamos a extraer, usando las funciones de búsqueda XML, todos los enlaces que salen de esta página con tal de listarlos y poder descargarlas más tarde. Sabemos que estos son elementos de tipo "", que tienen el atributo"href" para indicar la URL del enlace. P.e. "[Texto del Enlace](‘enlace’)". Del enlace nos quedaremos con la URL de destino y con el valor del enlace (texto del enlace).
-
-url_enlaces \<- enlaces %\>% html_attr("href")
-
-df \<- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
-
-View(df)
-
-```{r cars}
-install.packages("httr")
-install.packages("XML")
 library(httr2)
 library(XML)
 library(rvest)
+library(xml2)
+library(httr2)
+library(rvest)
+library(dplyr)
+```
+
+
+```{r asdad}
 mediawiki_url <- "https://www.mediawiki.org/wiki/MediaWiki"
+read_html(mediawiki_url)
+```
+
+2.  Analizar el contenido de la web, buscando el título de la página (que en HTML se etiqueta como "title"). En las cabeceras web encontramos información como el título, los ficheros de estilo visual, y meta-información como el nombre del autor de la página, una descripción de esta, el tipo de codificación de esta, o palabras clave que indican qué tipo de información contiene la página. Una vez descargada la página, y convertida a un formato analizable (como XML), buscaremos los elementos de tipo "title". P.e. "
+
+```{r asdas}
+
 html <- read_html(mediawiki_url)
+titulo <- html %>% html_element("title")
 
-enlaces <- html %>% html_elements("a")
+```
 
-url_enlaces <- enlaces %>% html_attr("href")
-texto_enlaces <-  a %>% html_text2()
+3\. Analizar el contenido de la web, buscando todos los enlaces (que en HTML se etiquetan como "a"), buscando el texto del enlace, así como la URL. Vamos a extraer, usando las funciones de búsqueda XML, todos los enlaces que salen de esta página con tal de listarlos y poder descargarlas más tarde. Sabemos que estos son elementos de tipo "", que tienen el atributo"href" para indicar la URL del enlace. P.e. "[Texto del Enlace](‘enlace’)". Del enlace nos quedaremos con la URL de destino y con el valor del enlace (texto del enlace).
 
-df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
+
+```{r aa}
 a <- html %>% html_elements("a")
-
-
+enlaces <- html %>% html_elements("a")
+texto_enlaces <-  a %>% html_text2()
 url_enlaces <- enlaces %>% html_attr("href")
-rm(a)
 df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
 
+```
+4.  Generar una tabla con cada enlace encontrado, indicando el texto que
+    acompaña el enlace, y el número de veces que aparece un enlace con ese
+    mismo objetivo.
+    
+    
+```{r ASDADSAD}
+df$es_relativa <- grepl('^/|#', df$urls, perl = T)
 
-html <- httr2::request("https://www.mediawiki.org/wiki/MediaWiki")
-View(df)
+df <- df %>% mutate(urls_absolutas = ifelse(es_relativa, paste(mediawiki_url, urls, sep = ""), urls))
+df$urls1 <- ifelse(substr(df$urls,1,1),"https://www.mediawiki.org/wiki/MediaWiki" + urls,urls) 
+df2 <- df %>% mutate(urls1 = ifelse(es_relativa, paste(mediawiki_url, urls), urls))
 
 
 
-install.packages("httr2")
-getData
-parsedHtml <- htmlParse(content, asText = TRUE)
+```
+5.  Para cada enlace, seguirlo e indicar si está activo (podemos usar el código de
+    status HTTP al hacer una petición a esa URL).
+    
+```{r cars}
+
+
+```
+    
+    
+6.  
+
+```{r cars}
+
 
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
