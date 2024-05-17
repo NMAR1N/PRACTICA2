@@ -27,54 +27,83 @@ library(xml2)
 library(httr2)
 library(rvest)
 library(dplyr)
+html <- GET("https://www.mediawiki.org/wiki/MediaWiki")
+contenido <- content(html, as = "text")
+parsedHtml <- htmlParse(contenido, asText = TRUE)
 ```
 
 
 ```{r asdad}
-mediawiki_url <- "https://www.mediawiki.org/wiki/MediaWiki"
-read_html(mediawiki_url)
+titulo <- xpathSApply(parsedHtml, "//title", xmlValue)
+##mediawiki_url <- "https://www.mediawiki.org/wiki/MediaWiki"
+##read_html(mediawiki_url)
 ```
 
 2.  Analizar el contenido de la web, buscando el título de la página (que en HTML se etiqueta como "title"). En las cabeceras web encontramos información como el título, los ficheros de estilo visual, y meta-información como el nombre del autor de la página, una descripción de esta, el tipo de codificación de esta, o palabras clave que indican qué tipo de información contiene la página. Una vez descargada la página, y convertida a un formato analizable (como XML), buscaremos los elementos de tipo "title". P.e. "
 
 ```{r asdas}
 
-html <- read_html(mediawiki_url)
-titulo <- html %>% html_element("title")
+##html <- read_html(mediawiki_url)
+##titulo <- html %>% html_element("title")
+titulo <- xpathSApply(parsedHtml, "//title", xmlValue)
+
 
 ```
+RSPT: El título de la página es: `r titulo`.
 
 3\. Analizar el contenido de la web, buscando todos los enlaces (que en HTML se etiquetan como "a"), buscando el texto del enlace, así como la URL. Vamos a extraer, usando las funciones de búsqueda XML, todos los enlaces que salen de esta página con tal de listarlos y poder descargarlas más tarde. Sabemos que estos son elementos de tipo "", que tienen el atributo"href" para indicar la URL del enlace. P.e. "[Texto del Enlace](‘enlace’)". Del enlace nos quedaremos con la URL de destino y con el valor del enlace (texto del enlace).
 
 
 ```{r aa}
-a <- html %>% html_elements("a")
-enlaces <- html %>% html_elements("a")
-texto_enlaces <-  a %>% html_text2()
-url_enlaces <- enlaces %>% html_attr("href")
-df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
+##a <- html %>% html_elements("a")
+##enlaces <- html %>% html_elements("a")
+##texto_enlaces <-  a %>% html_text2()
+##url_enlaces <- enlaces %>% html_attr("href")
+##df <- data.frame("enlaces" = texto_enlaces, "urls" = url_enlaces)
+links_text   <- xpathSApply(parsedHtml, "//a", xmlValue)
+links_url <- xpathSApply(parsedHtml, "//a", xmlGetAttr, 'href')
+ 
+tablaPrin <- data.frame("enlaces" = links_text, 
+                        "URL" = links_url,
+                        stringsAsFactors = F)
+ 
+tablaPrin$Enlace2 <- str_replace_na(tablaPrin$Enlace)
+tablaPrin$Enlace2[tablaPrin$Enlace2 == "NA"] <- NA 
+tablaPrin
+
 
 ```
+RSPT: La infromacion obtenida es: `r View(tablaPrin)`
+
 4.  Generar una tabla con cada enlace encontrado, indicando el texto que
     acompaña el enlace, y el número de veces que aparece un enlace con ese
     mismo objetivo.
     
     
 ```{r ASDADSAD}
-df$es_relativa <- grepl('^/|#', df$urls, perl = T)
+##df$es_relativa <- grepl('^/|#', df$urls, perl = T)
 
-df <- df %>% mutate(urls_absolutas = ifelse(es_relativa, paste(mediawiki_url, urls, sep = ""), urls))
-df$urls1 <- ifelse(substr(df$urls,1,1),"https://www.mediawiki.org/wiki/MediaWiki" + urls,urls) 
-df2 <- df %>% mutate(urls1 = ifelse(es_relativa, paste(mediawiki_url, urls), urls))
+##df <- df %>% mutate(urls_absolutas = ifelse(es_relativa, paste(mediawiki_url, urls, sep = ""), urls))
+##df$urls1 <- ifelse(substr(df$urls,1,1),"https://www.mediawiki.org/wiki/MediaWiki" + urls,urls) 
+##df2 <- df %>% mutate(urls1 = ifelse(es_relativa, paste(mediawiki_url, urls), urls))
 
-
+# convertir relativas en absolutas
+tablaPrin$es_relativo <- grepl("^/|#", tablaPrin$URL, perl = T)
+tablaPrin <- tablaPrin %>% mutate(url_absoluta = ifelse(es_relativo, paste("https://www.mediawiki.org", URL, sep = ""), URL))
+ 
+tablaPrin <- tablaPrin %>% add_count(url_absoluta)
 
 ```
 5.  Para cada enlace, seguirlo e indicar si está activo (podemos usar el código de
     status HTTP al hacer una petición a esa URL).
     
 ```{r cars}
-
+extract_status_code <- function(url) {
+  resp <- HEAD(url)
+  return(resp$status_code)
+}
+ 
+tablaPrin$status_code <- sapply(tablaPrin$url_absoluta, extract_status_code)
 
 ```
     
